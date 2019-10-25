@@ -16,11 +16,6 @@ class Analyzer(object):
         Attributes:
         dirName : analyzer directory, where you can write anything you want
         """
-        #self.file = ROOT.gROOT.GetListOfFiles().FindObject("mytree.root")
-        #if not self.file or not file.IsOpen():
-        #    self.file = ROOT.TFile("datafiles/mytree.root", "read")
-        #self.tree = self.file.Get("muons")
-
         self.file = ROOT.gROOT.GetListOfFiles().FindObject("mytree.root")
         if not self.file or not self.file.IsOpen():
             self.file = ROOT.TFile("datafiles/mytree.root", "read")
@@ -28,23 +23,13 @@ class Analyzer(object):
         
         # Get the number of entries(events) of the TTree (file.root)
         self.numEntries=self.tree.GetEntries()
-        self.Setup(self.tree)
-
-        # Create a directory for this Analyzer
-        #self.dirName = '/'.join( [type(self).__name__] )
-        #os.mkdir( self.dirName )
-
-
-        # this is the main logger corresponding to the looper.
-        # each analyzer could also declare its own logger
-        # self.mainLogger = logging.getLogger( looperName )
-        # print self.mainLogger.handlers
-        #self.beginLoopCalled = False
+        # Initialize all datamembers (taken from the tree)
+        self.Setup()
 
     def beginJob(self, name):
         '''Executed before the first object comes in'''
 
-        print '*** Begin job'
+        print('*** Begin job')
         self.DefineHistograms()
         self.rootfile= ROOT.TFile("datafiles/"+name, "RECREATE") 
 
@@ -52,70 +37,29 @@ class Analyzer(object):
         '''Executed on every event'''
         pass
 
-
     def endJob(self):
         ''' 
         Executed after the analysis to write the histograms in the root file
         '''
-        print "*** writing file", self.rootfile
+        print("*** writing file", self.rootfile)
         self.WriteHistograms()
         self.rootfile.Close()
-        print "*** done"
+        print("*** done")
 
-    def Setup(self, tree):
+    def Setup(self):
         '''
         Setup, init the variables for the particle and set 
         branch addresses
    
         '''
         self.relIso = -999. 
-        
-        self.Muon_pt = ROOT.std.vector('float')()
-        self.Muon_px= ROOT.std.vector('float')()
-        self.Muon_py= ROOT.std.vector('float')()
-        self.Muon_pz= ROOT.std.vector('float')()
-        self.Muon_eta = ROOT.std.vector('float')()
-        self.Muon_energy = ROOT.std.vector('float')()
-        self.Muon_distance = ROOT.std.vector('float')()
-        self.Muon_dB = ROOT.std.vector('float')()
-        self.Muon_edB = ROOT.std.vector('float')()
-        self.Muon_isolation_sumPt = ROOT.std.vector('float')()
-        self.Muon_isolation_emEt = ROOT.std.vector('float')()
-        self.Muon_isolation_hadEt = ROOT.std.vector('float')()
-        self.Muon_isGlobalMuon = ROOT.std.vector('int')()
-        self.Muon_isStandAloneMuon = ROOT.std.vector('int')()
-        self.Muon_isTrackerMuon = ROOT.std.vector('int')()
-        self.Muon_numberOfValidHits = ROOT.std.vector('int')()
-        self.Muon_numOfMatches= ROOT.std.vector('int')()
-        self.Muon_NValidHitsSATk= ROOT.std.vector('int')()
-        self.Muon_normChi2 = ROOT.std.vector('float')()
-        self.Muon_charge = ROOT.std.vector('int')()
-        
-        tree.SetBranchAddress("Muon_pt", self.Muon_pt)
-        tree.SetBranchAddress("Muon_px", self.Muon_px)
-        tree.SetBranchAddress("Muon_py", self.Muon_py)
-        tree.SetBranchAddress("Muon_pz", self.Muon_pz)
-        tree.SetBranchAddress("Muon_eta", self.Muon_eta)
-        tree.SetBranchAddress("Muon_energy", self.Muon_energy)
-        tree.SetBranchAddress("Muon_distance", self.Muon_distance)
-        tree.SetBranchAddress("Muon_dB", self.Muon_dB)
-        tree.SetBranchAddress("Muon_edB", self.Muon_edB)
-        tree.SetBranchAddress("Muon_isolation_sumPt", self.Muon_isolation_sumPt )
-        tree.SetBranchAddress("Muon_isolation_emEt", self.Muon_isolation_emEt )
-        tree.SetBranchAddress("Muon_isolation_hadEt", self.Muon_isolation_hadEt)
-        tree.SetBranchAddress("Muon_isGlobalMuon", self.Muon_isGlobalMuon)
-        tree.SetBranchAddress("Muon_isStandAloneMuon", self.Muon_isStandAloneMuon)
-        tree.SetBranchAddress("Muon_isTrackerMuon", self.Muon_isTrackerMuon)
-        tree.SetBranchAddress("Muon_numberOfValidHits", self.Muon_numberOfValidHits)
-        tree.SetBranchAddress("Muon_numOfMatches", self.Muon_numOfMatches) 
-        tree.SetBranchAddress("Muon_NValidHitsSATk", self.Muon_NValidHitsSATk)     
-        tree.SetBranchAddress("Muon_normChi2", self.Muon_normChi2)
-        tree.SetBranchAddress("Muon_charge", self.Muon_charge)
-    
-        # tree.SetBranchAddress("Muon_numOfMatches", self.Muon_numOfMatches)
 
-   
+        self.tree.GetEntry(0)
 
+        # Extract all branches and use it as datamembers of this class
+        for br in self.tree.GetListOfBranches():
+            setattr(self,br.GetName(),getattr(self.tree,br.GetName()))
+        
     ### DEFINE AND FILL HISTOGRAMS ### 
 
     def DefineHistograms(self):

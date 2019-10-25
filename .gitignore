@@ -1,3 +1,5 @@
 *.pyc
 *.ipynb_checkpoints
 output_histograms/*
+histos.root
+goodhistos.root
